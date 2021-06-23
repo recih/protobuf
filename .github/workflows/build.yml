@@ -1,22 +1,81 @@
-name: C/C++ CI
+name: build protoc binaries
 
 on:
   push:
-    branches: [ master, mod ]
+    branches:
+      - master
+      - mod
+    tags:
+      - 'v*'
 
 jobs:
-  build:
-
+  build-linux:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
-    - name: install packages
-      run: sudo apt-get install autoconf automake libtool curl make g++ unzip
-    - name: build
-      run: |
-        ./autogen.sh && \
-        ./configure --prefix=$PWD/dist && \
-        make && \
-        make check && \
-        make install
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+          lfs: true
+      - name: install packages
+        run: sudo apt-get install autoconf automake libtool curl make g++ unzip
+      - name: build
+        run: |
+          ./autogen.sh
+          ./configure --prefix=$PWD/dist
+          make
+          # make check
+          make install
+
+  build-macos:
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+          lfs: true
+      - name: build
+        run: |
+          ./autogen.sh
+          ./configure --prefix=$PWD/dist
+          make
+          # make check
+          make install
+
+  build-windows:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        arch:
+          - win32
+          - win64
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+          lfs: true
+      - uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{ matrix.arch }}
+      - name: build
+        working-directory: cmake
+        run: |
+          mkdir build & cd build
+          mkdir release & cd release
+          cmake -G "NMake Makefiles" ^
+          -DCMAKE_BUILD_TYPE=Release ^
+          -DCMAKE_INSTALL_PREFIX=../../../../install ^
+          ../..
+          nmake
+          nmake install
+      - name: zip windows artifact
+        working-directory: cmake/install
+        run: |
+          powershell Compress-Archive out protobuf-${{ matrix.arch }}.zip 
+      - name: upload windows artifact
+        uses: actions/upload-artifact@v1
+        with:
+          name: uploads
+          path: cmake/install/protobuf-${{ matrix.arch }}.zip 
