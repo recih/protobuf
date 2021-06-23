@@ -43,8 +43,6 @@ jobs:
         with:
           submodules: true
           lfs: true
-      - name: xcode-select
-        run: sudo xcode-select --install
       - name: install tools
         run: brew install autoconf automake libtool
       - name: build
