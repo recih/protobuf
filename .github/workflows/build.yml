@@ -1,0 +1,110 @@
+name: build protoc binaries
+
+on:
+  push:
+    branches:
+      - master
+      - mod
+    tags:
+      - 'v*'
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+          lfs: true
+      - name: Inject slug/short variables
+        uses: rlespinasse/github-slug-action@v3.x
+      - name: install tools
+        run: sudo apt-get install autoconf automake libtool curl make g++ unzip
+      - name: build
+        run: |
+          ./autogen.sh
+          ./configure --disable-shared --prefix=$PWD/dist
+          make
+          make install
+      - name: set file name
+        run: echo "OUTPUT_FILENAME=protobuf-$GITHUB_REF_SLUG-linux.zip" >> $GITHUB_ENV
+      - name: zip linux artifact
+        working-directory: dist
+        run: |
+          zip -r "$OUTPUT_FILENAME" bin include
+      - name: upload linux artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ env.OUTPUT_FILENAME }}
+          path: dist/${{ env.OUTPUT_FILENAME }}
+
+  build-macos:
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+          lfs: true
+      - name: Inject slug/short variables
+        uses: rlespinasse/github-slug-action@v3.x
+      - name: install tools
+        run: brew install autoconf automake libtool
+      - name: build
+        run: |
+          ./autogen.sh
+          ./configure --disable-shared --prefix=$PWD/dist
+          make
+          make install
+      - name: set file name
+        run: echo "OUTPUT_FILENAME=protobuf-$GITHUB_REF_SLUG-macos.zip" >> $GITHUB_ENV
+      - name: zip macos artifact
+        working-directory: dist
+        run: |
+          zip -r "$OUTPUT_FILENAME" bin include
+      - name: upload macos artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ env.OUTPUT_FILENAME }}
+          path: dist/${{ env.OUTPUT_FILENAME }}
+
+  build-windows:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        arch:
+          - win32
+          - win64
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+          lfs: true
+      - name: Inject slug/short variables
+        uses: rlespinasse/github-slug-action@v3.x
+      - uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{ matrix.arch }}
+      - name: build
+        working-directory: cmake
+        run: |
+          mkdir build
+          cd build
+          mkdir release
+          cd release
+          cmake -G "NMake Makefiles" -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/dist ../..
+          nmake
+          nmake install
+      - name: set file name
+        run: echo "OUTPUT_FILENAME=protobuf-${env:GITHUB_REF_SLUG}-${{ matrix.arch }}.zip" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+      - name: zip windows artifact
+        working-directory: dist
+        run: |
+          Compress-Archive -Path bin, include -DestinationPath $env:OUTPUT_FILENAME
+      - name: upload windows artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ env.OUTPUT_FILENAME }}
+          path: dist/${{ env.OUTPUT_FILENAME }}
