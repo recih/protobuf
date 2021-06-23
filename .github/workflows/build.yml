@@ -17,15 +17,23 @@ jobs:
         with:
           submodules: true
           lfs: true
-      - name: install packages
+      - name: install tools
         run: sudo apt-get install autoconf automake libtool curl make g++ unzip
       - name: build
         run: |
           ./autogen.sh
           ./configure --prefix=$PWD/dist
           make
-          # make check
           make install
+      - name: zip linux artifact
+        working-directory: dist
+        run: |
+          zip -r protobuf-linux.zip bin include
+      - name: upload linux artifact
+        uses: actions/upload-artifact@v1
+        with:
+          name: uploads
+          path: dist/protobuf-linux.zip
 
   build-macos:
     runs-on: macos-latest
@@ -35,13 +43,25 @@ jobs:
         with:
           submodules: true
           lfs: true
+      - name: xcode-select
+        run: sudo xcode-select --install
+      - name: install tools
+        run: brew install autoconf automake libtool
       - name: build
         run: |
           ./autogen.sh
           ./configure --prefix=$PWD/dist
           make
-          # make check
           make install
+      - name: zip linux artifact
+        working-directory: dist
+        run: |
+          zip -r protobuf-linux.zip bin include
+      - name: upload linux artifact
+        uses: actions/upload-artifact@v1
+        with:
+          name: uploads
+          path: dist/protobuf-linux.zip
 
   build-windows:
     runs-on: windows-latest
@@ -62,18 +82,17 @@ jobs:
       - name: build
         working-directory: cmake
         run: |
-          mkdir build & cd build
-          mkdir release & cd release
-          cmake -G "NMake Makefiles" ^
-          -DCMAKE_BUILD_TYPE=Release ^
-          -DCMAKE_INSTALL_PREFIX=../../../../install ^
-          ../..
+          mkdir build
+          cd build
+          mkdir release
+          cd release
+          cmake -G "NMake Makefiles" -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=../../../../install ../..
           nmake
           nmake install
       - name: zip windows artifact
         working-directory: cmake/install
         run: |
-          powershell Compress-Archive out protobuf-${{ matrix.arch }}.zip 
+          powershell Compress-Archive bin include protobuf-${{ matrix.arch }}.zip 
       - name: upload windows artifact
         uses: actions/upload-artifact@v1
         with:
