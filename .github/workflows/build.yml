@@ -90,7 +90,7 @@ jobs:
       - name: zip windows artifact
         working-directory: cmake/install
         run: |
-          powershell Compress-Archive bin include protobuf-${{ matrix.arch }}.zip 
+          Compress-Archive -Path bin, include -DestinationPath protobuf-${{ matrix.arch }}.zip 
       - name: upload windows artifact
         uses: actions/upload-artifact@v1
         with:
