@@ -95,7 +95,7 @@ jobs:
           nmake
           nmake install
       - name: set file name
-        run: echo "OUTPUT_FILENAME=protobuf-${env:GITHUB_REF_SLUG}-${{ matrix.arch }}.zip" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+        run: echo "OUTPUT_FILENAME=protobuf-${env:GITHUB_REF_SLUG}-${{ matrix.arch }}.zip" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
       - name: zip windows artifact
         run: |
           cd cmake\install
