@@ -17,6 +17,8 @@ jobs:
         with:
           submodules: true
           lfs: true
+      - name: Inject slug/short variables
+        uses: rlespinasse/github-slug-action@v3.x
       - name: install tools
         run: sudo apt-get install autoconf automake libtool curl make g++ unzip
       - name: build
@@ -25,15 +27,17 @@ jobs:
           ./configure --disable-shared --prefix=$PWD/dist
           make
           make install
+      - name: set file name
+        run: echo "OUTPUT_FILENAME=protobuf-$GITHUB_REF_SLUG-linux.zip" >> $GITHUB_ENV
       - name: zip linux artifact
         working-directory: dist
         run: |
-          zip -r protobuf-linux.zip bin include
+          zip -r "$OUTPUT_FILENAME" bin include
       - name: upload linux artifact
         uses: actions/upload-artifact@v2
         with:
-          name: protobuf-linux.zip
-          path: dist/protobuf-linux.zip 
+          name: ${{ env.OUTPUT_FILENAME }}
+          path: dist/${{ env.OUTPUT_FILENAME }}
 
   build-macos:
     runs-on: macos-latest
@@ -51,15 +55,17 @@ jobs:
           ./configure --disable-shared --prefix=$PWD/dist
           make
           make install
+      - name: set file name
+        run: echo "OUTPUT_FILENAME=protobuf-$GITHUB_REF_SLUG-macos.zip" >> $GITHUB_ENV
       - name: zip macos artifact
         working-directory: dist
         run: |
-          zip -r protobuf-macos.zip bin include
+          zip -r "$OUTPUT_FILENAME" bin include
       - name: upload macos artifact
         uses: actions/upload-artifact@v2
         with:
-          name: protobuf-macos.zip
-          path: dist/protobuf-macos.zip 
+          name: ${{ env.OUTPUT_FILENAME }}
+          path: dist/${{ env.OUTPUT_FILENAME }}
 
   build-windows:
     runs-on: windows-latest
@@ -84,15 +90,17 @@ jobs:
           cd build
           mkdir release
           cd release
-          cmake -G "NMake Makefiles" -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=../../../../install ../..
+          cmake -G "NMake Makefiles" -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=../../install ../..
           nmake
           nmake install
+      - name: set file name
+        run: echo "OUTPUT_FILENAME=protobuf-${env:GITHUB_REF_SLUG}-${{ matrix.arch }}.zip" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
       - name: zip windows artifact
+        working-directory: cmake/install
         run: |
-          cd cmake\install
-          Compress-Archive -Path bin, include -DestinationPath protobuf-${{ matrix.arch }}.zip 
+          Compress-Archive -Path bin, include -DestinationPath $env:OUTPUT_FILENAME
       - name: upload windows artifact
         uses: actions/upload-artifact@v2
         with:
-          name: protobuf-${{ matrix.arch }}.zip 
-          path: cmake/install/protobuf-${{ matrix.arch }}.zip 
+          name: ${{ env.OUTPUT_FILENAME }}
+          path: cmake/install/${{ env.OUTPUT_FILENAME }}
