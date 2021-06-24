@@ -47,6 +47,8 @@ jobs:
         with:
           submodules: true
           lfs: true
+      - name: Inject slug/short variables
+        uses: rlespinasse/github-slug-action@v3.x
       - name: install tools
         run: brew install autoconf automake libtool
       - name: build
@@ -80,6 +82,8 @@ jobs:
         with:
           submodules: true
           lfs: true
+      - name: Inject slug/short variables
+        uses: rlespinasse/github-slug-action@v3.x
       - uses: ilammy/msvc-dev-cmd@v1
         with:
           arch: ${{ matrix.arch }}
