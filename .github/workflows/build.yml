@@ -22,7 +22,7 @@ jobs:
       - name: build
         run: |
           ./autogen.sh
-          ./configure --prefix=$PWD/dist
+          ./configure --disable-shared --prefix=$PWD/dist
           make
           make install
       - name: zip linux artifact
@@ -30,10 +30,10 @@ jobs:
         run: |
           zip -r protobuf-linux.zip bin include
       - name: upload linux artifact
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@v2
         with:
-          name: uploads
-          path: dist/protobuf-linux.zip
+          name: protobuf-linux.zip
+          path: dist/protobuf-linux.zip 
 
   build-macos:
     runs-on: macos-latest
@@ -48,18 +48,18 @@ jobs:
       - name: build
         run: |
           ./autogen.sh
-          ./configure --prefix=$PWD/dist
+          ./configure --disable-shared --prefix=$PWD/dist
           make
           make install
-      - name: zip linux artifact
+      - name: zip macos artifact
         working-directory: dist
         run: |
-          zip -r protobuf-linux.zip bin include
-      - name: upload linux artifact
-        uses: actions/upload-artifact@v1
+          zip -r protobuf-macos.zip bin include
+      - name: upload macos artifact
+        uses: actions/upload-artifact@v2
         with:
-          name: uploads
-          path: dist/protobuf-linux.zip
+          name: protobuf-macos.zip
+          path: dist/protobuf-macos.zip 
 
   build-windows:
     runs-on: windows-latest
@@ -88,11 +88,11 @@ jobs:
           nmake
           nmake install
       - name: zip windows artifact
-        working-directory: cmake/install
         run: |
+          cd cmake\install
           Compress-Archive -Path bin, include -DestinationPath protobuf-${{ matrix.arch }}.zip 
       - name: upload windows artifact
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@v2
         with:
-          name: uploads
+          name: protobuf-${{ matrix.arch }}.zip 
           path: cmake/install/protobuf-${{ matrix.arch }}.zip 
